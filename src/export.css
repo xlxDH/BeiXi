@@ -1,0 +1,192 @@
+.export-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #263c4066;
+  backdrop-filter: blur(5px);
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.export-dialog {
+  background: #fff;
+  width: min(1040px, 100%);
+  max-height: calc(100dvh - 48px);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 18px 70px #1b343344;
+}
+.export-dialog header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e6eeeb;
+}
+.export-dialog h2 {
+  margin: 0;
+  font-size: 19px;
+}
+.export-dialog header p {
+  font-size: 12px;
+  margin: 6px 0 0;
+  color: #77918e;
+}
+.export-close {
+  background: transparent;
+  padding: 8px;
+  color: #718b88;
+}
+.export-options {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding: 16px 24px;
+  font-size: 12px;
+}
+.export-options label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.export-options button,
+.export-download {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #e7f2ed;
+  color: #367565;
+  padding: 10px 14px;
+  border-radius: 7px;
+}
+.export-options button {
+  margin-left: auto;
+}
+.export-preview {
+  margin: 0 24px;
+  background: #eff4f3;
+  min-height: 220px;
+  overflow: auto;
+  display: grid;
+  place-items: start center;
+}
+.export-editor {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  line-height: 0;
+}
+.export-editor canvas {
+  width: 100%;
+  display: block;
+  height: auto;
+}
+.export-member-handle {
+  position: absolute;
+  padding: 0;
+  background: transparent;
+  border-radius: 5px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.export-member-handle:hover,
+.export-member-handle:focus-visible {
+  outline: 2px dashed #367565;
+  outline-offset: 2px;
+}
+.export-editor.dragging .export-member-handle {
+  cursor: grabbing;
+}
+.export-edit-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px 12px;
+}
+.export-edit-tools p {
+  flex: 1;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #536f76;
+}
+.export-edit-tools button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 8px 10px;
+  background: #e7f2ed;
+  color: #367565;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.export-download-error {
+  margin: 12px 24px 0;
+  font-size: 13px;
+  color: #af554a;
+}
+.export-preview > p {
+  font-size: 13px;
+  color: #7b9390;
+  padding: 25px;
+  text-align: center;
+}
+.export-preview .export-error {
+  color: #af554a;
+}
+.export-dialog footer {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 17px 24px;
+}
+.export-dialog footer span {
+  font-size: 11px;
+  color: #8a9d99;
+  margin-right: auto;
+}
+.export-dialog footer > button {
+  padding: 10px 14px;
+  border-radius: 7px;
+}
+.spin {
+  animation: export-spin 1s linear infinite;
+}
+@keyframes export-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (max-width: 600px) {
+  .export-backdrop {
+    padding: 12px;
+  }
+  .export-dialog {
+    max-height: calc(100dvh - 24px);
+  }
+  .export-dialog header,
+  .export-options,
+  .export-dialog footer {
+    padding: 15px;
+  }
+  .export-options {
+    gap: 12px;
+  }
+  .export-options button {
+    margin-left: 0;
+  }
+  .export-preview {
+    margin: 0 15px;
+  }
+  .export-edit-tools {
+    padding: 0 15px 12px;
+  }
+  .export-dialog footer span {
+    max-width: 130px;
+  }
+}

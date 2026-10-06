@@ -1,0 +1,42 @@
+# Dependencies and generated builds
+node_modules/
+/dist/
+.vite/
+*.tsbuildinfo
+
+# Local configuration and credentials (commit placeholder examples only)
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.local
+
+# Logs, caches and test output
+*.log
+.cache/
+coverage/
+playwright-report/
+test-results/
+
+# Local editor and operating-system files
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Generated screenshots and exports in the project root only.
+# Keep source assets such as src/photos/ and future documentation images.
+/*-preview.png
+/*-diagnostic.png
+/site-*-verification.png
+/beixi-export*.png
+/beixi-mobile-export*.png
+/southeast-campus-area.png

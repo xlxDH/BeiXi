@@ -1,0 +1,7 @@
+export function portrait(color: string, hair: string, type = 0, full = false) {
+  const body = full
+    ? `<ellipse cx="60" cy="146" rx="27" ry="7" fill="#263943" opacity=".16"/><path d="M44 124v19m31-19v19" stroke="#344551" stroke-width="10" stroke-linecap="round"/><path d="M31 94l-9 24m67-24 9 24" stroke="#f4c6aa" stroke-width="10" stroke-linecap="round"/>`
+    : "";
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="${full ? 156 : 120}" viewBox="0 0 120 ${full ? 156 : 120}"><rect width="120" height="${full ? 156 : 120}" rx="26" fill="${full ? "none" : color + "28"}"/>${body}<path d="M24 124v-18c0-24 16-35 36-35s36 11 36 35v18" fill="${color}"/><path d="M52 73v12q8 9 16 0V73" fill="#efb798"/><ellipse cx="60" cy="50" rx="30" ry="35" fill="${hair}"/><ellipse cx="60" cy="55" rx="25" ry="28" fill="#f5cbb2"/><path d="M31 47q-3-36 31-36 29 2 29 35L77 31 62 44 50 29Z" fill="${hair}"/><circle cx="49" cy="55" r="3" fill="#34414a"/><circle cx="72" cy="55" r="3" fill="#34414a"/><path d="M53 68q7 5 14-1" fill="none" stroke="#a66e61" stroke-width="2" stroke-linecap="round"/>${type % 2 ? '<path d="M36 52h24m3 0h23" stroke="#465d68" stroke-width="2"/><rect x="40" y="48" width="17" height="13" rx="5" fill="none" stroke="#465d68" stroke-width="2"/><rect x="64" y="48" width="17" height="13" rx="5" fill="none" stroke="#465d68" stroke-width="2"/>' : ""}<path d="M46 92l14 13 14-13" stroke="#fff" opacity=".6" stroke-width="4" fill="none"/></svg>`;
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
