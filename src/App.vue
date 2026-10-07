@@ -616,7 +616,7 @@ onUnmounted(() => {
       </button>
     </div>
     <header class="topbar">
-      <a class="brand" href="#" @click.prevent="fit">被溪</a
+      <a class="brand" href="#" @click.prevent="fit">被汐</a
       ><span class="demo-badge">本地模拟位置</span>
       <div class="top-actions">
         <button class="icon-button" title="地图服务设置" aria-label="地图服务设置" @click="settingsOpen = true"><Settings :size="19" /></button>
@@ -776,7 +776,7 @@ onUnmounted(() => {
     </div>
     <div v-if="loading" class="loading-status">正在连接{{ providerName(activeProvider) }}…</div>
     <div class="map-credit">
-      {{ mapReady ? providerName(activeProvider) : "本地示意图 · 非真实底图" }} · 被溪
+      {{ mapReady ? providerName(activeProvider) : "本地示意图 · 非真实底图" }} · 被汐
     </div>
     <div v-if="editor" class="modal-backdrop" @click.self="editor = false">
       <form class="editor-modal" @submit.prevent="commit">

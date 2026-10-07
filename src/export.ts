@@ -641,7 +641,7 @@ export function renderExport(scene: ExportScene, canvas: HTMLCanvasElement) {
   ctx.textAlign = "left";
   ctx.fillText(scene.credit, 16, height - 14, width - 210);
   ctx.textAlign = "right";
-  ctx.fillText("被溪 · 本地位置示意", width - 16, height - 14);
+  ctx.fillText("被汐 · 本地位置示意", width - 16, height - 14);
 }
 
 export function exportBlob(canvas: HTMLCanvasElement): Promise<Blob> {

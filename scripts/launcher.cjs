@@ -20,7 +20,7 @@ const server = http.createServer((req, res) => {
   catch { res.writeHead(400); return res.end(); }
   if (pathname === '/__beixi_health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ app: 'beixi', version: '1.1.0' }));
+    return res.end(JSON.stringify({ app: 'beixi', version: '1.1.1' }));
   }
   const file = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
   if (!file.startsWith(root + path.sep)) { res.writeHead(403); return res.end(); }

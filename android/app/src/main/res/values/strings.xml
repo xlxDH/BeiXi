@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">被溪</string>
-    <string name="title_activity_main">被溪</string>
+    <string name="app_name">被汐</string>
+    <string name="title_activity_main">被汐</string>
     <string name="package_name">com.xlxdh.beixi</string>
     <string name="custom_url_scheme">com.xlxdh.beixi</string>
 </resources>

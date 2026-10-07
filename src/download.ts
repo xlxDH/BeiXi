@@ -15,12 +15,12 @@ export async function downloadPng(blob: Blob) {
     const file = await Filesystem.writeFile({ path, data, directory: Directory.Cache });
     // Chooser completion can precede the receiving app reading the URI.
     // Keep the image in the OS-managed cache for the receiver.
-    await Share.share({ title: "被溪 · 地图", files: [file.uri], dialogTitle: "保存或分享地图" });
+    await Share.share({ title: "被汐 · 地图", files: [file.uri], dialogTitle: "保存或分享地图" });
     return;
   }
   const url = URL.createObjectURL(blob), a = document.createElement("a");
   a.href = url;
-  a.download = "被溪-地图.png";
+  a.download = "被汐-地图.png";
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

@@ -57,7 +57,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --draft --title "BeiXi $TAG" --notes-file docs/release-v1.1.0.md
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --draft --title "被汐 $TAG" --notes-file "docs/release-${TAG}.md"
           gh release upload "$TAG" release-assets/* --clobber
       - uses: actions/upload-artifact@v4
         with:

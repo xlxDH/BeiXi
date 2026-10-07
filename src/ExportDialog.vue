@@ -132,7 +132,7 @@ onUnmounted(cancel);
       <header>
         <div>
           <h2 id="export-title">导出地图</h2>
-          <p>被溪 · {{ members.length }} 位成员</p>
+          <p>被汐 · {{ members.length }} 位成员</p>
         </div>
         <button
           class="export-close"
@@ -170,7 +170,7 @@ onUnmounted(cancel);
       </div>
       <div class="export-preview">
         <div v-if="scene" class="export-editor" :class="{ dragging }">
-          <canvas ref="canvas" role="img" aria-label="被溪地图 PNG 导出预览" />
+          <canvas ref="canvas" role="img" aria-label="被汐地图 PNG 导出预览" />
           <template v-for="handle in handles" :key="`${handle.layerIndex}-${handle.id}`">
             <button v-for="part in (['label', 'photo'] as const)" :key="part"
               class="export-member-handle" :class="`export-handle-${part}`"
