@@ -4,7 +4,7 @@ CONTRACT_REF: TASK.md
 CONTRACT_REVISION: 9
 APPROVED_REVISION: 9
 APPROVAL: confirmed
-STATUS: ACTIVE
+STATUS: IDLE
 ARCHITECTURE_REF: README.md
 
 修订6（历史）：导出预览支持鼠标/触屏拖动头像或姓名，仅改变导出排版，成员经纬度和地理锚点不变。范围：导出渲染、弹窗、样式、针对性验证及说明。E1拖动与连线正确且不改坐标；E2智能主图/小窗、当前视图均支持，下载2560×1800与调整后的预览一致；E3重置/重新生成/关闭清除调整，错误和取消可用。假设：调整仅限本次预览，头像约束在所属区域内。不改存储结构、依赖或供应商。风险：预览缩放换算、小窗裁剪、异步取消；以几何回归、构建和浏览器操作验证。
@@ -31,4 +31,4 @@ ARCHITECTURE_REF: README.md
 
 修订8完成：main提交25ae110、tag v1.1.0及Release已发布；GitHub Actions 37579682688成功，六个附件SHA256及全归档凭据扫描通过，Android APK v2签名验证通过。Windows启动/设置已实测；macOS权限静态验证，移动端真机和Xcode未验证。独立复审无剩余Critical/Major。README/架构说明更新，任务恢复IDLE。
 
-修订9（当前用户明确授权）：中文名改为“被汐”，发布v1.1.1。N1页面、原生名称、导出和当前说明统一更新，保留内部包名/存储键。N2 output重新生成Windows x64、Android APK、macOS Intel/ARM私用包，继续内置本机地图配置并沿用本地APK签名。N3提交推送main、tag和无本机凭据的GitHub Release。范围限品牌/版本/打包说明与验证，不改功能、依赖、数据结构和商店签名；保留历史发布和旧包备份。验证：现有回归、构建、归档名称/凭据/完整性、APK标签/签名、Windows启动、CI及远端校验；macOS和Android真机未验收。检查点R9 ACTIVE：改名后构建并发布；无阻塞。
+修订9（当前用户明确授权）：中文名改为“被汐”，发布v1.1.1。N1页面、原生名称、导出和当前说明统一更新，保留内部包名/存储键。N2 output重新生成Windows x64、Android APK、macOS Intel/ARM私用包，继续内置本机地图配置并沿用本地APK签名。N3提交推送main、tag和无本机凭据的GitHub Release。范围限品牌/版本/打包说明与验证，不改功能、依赖、数据结构和商店签名；保留历史发布和旧包备份。验证：现有回归、构建、归档名称/凭据/完整性、APK标签/签名、Windows启动、CI及远端校验；macOS和Android真机未验收。检查点R9 COMPLETE并恢复IDLE：N1品牌与编译资源改名通过；N2 output四个私用包、SHA256、配置注入、APK原生资源/对齐/签名及旧证书一致性通过，Windows内置运行时启动通过；N3提交9c84172、tag v1.1.1已推送，CI37591498035成功，六个公开归档校验和及凭据扫描通过，Release405527737已发布。旧output保存在被忽略的.cache/output-before-v1.1.1。机械低风险改名自查无遗留发现，不要求独立审查；GUIDE_NO_UPDATE、ARCHITECTURE_NO_UPDATE、README_UPDATED。保留原有.gitignore未提交修改。macOS/Android真机和Xcode未测试，无下一步。

@@ -1,3 +1,16 @@
+## v1.1.1：被汐改名与重新打包（2026-10-07）
+
+- 契约：TASK.md修订9；源码提交9c84172，tag v1.1.1。
+- N1：页面标题/品牌、导出预览/水印/文件名/分享标题、Android与iOS显示名更新为“被汐”；内部包名和存储键保持兼容。活动源码和新网页构建不含旧中文品牌。历史发布记录保留原称。
+- N2：output含Windows10/11 x64 ZIP、macOS Intel/Apple Silicon tar.gz、Android APK及SHA256SUMS和中文使用说明；按用户确认继续内置本机地图配置。旧output保存在被忽略的.cache/output-before-v1.1.1。
+- 私用包验证：网页资源逐字节一致、三项地图配置已内置（不记录值）、归档完整、macOS启动器与Node为0755；APK v2签名有效，与旧私用APK证书相同，原生资源与新CI APK一致，resources.arsc未压缩且ZIP存储项4字节对齐。编译manifest确认versionCode111/versionName1.1.1及com.xlxdh.beixi；原生字符串资源含“被汐”且无旧品牌。
+- Windows使用包内Node实际启动，健康接口返回v1.1.1，页面标题与网页脚本正确；测试后停止服务。
+- N3：GitHub Actions 37591498035全部成功。公开六个归档全部下载，SHA256与CI清单一致；逐文件扫描未包含本机地图凭据，网站资源无旧品牌。公开APK v2签名有效。
+- 已发布：https://github.com/xlxDH/BeiXi/releases/tag/v1.1.1 （Release405527737）。本地私用包未上传。
+- 现有connections/maps回归、vue-tsc与release构建通过；构建仍有既有大chunk提示，无构建错误。初次本机构建发现旧资源残留，移入本地备份后从空目录重建，最终包验证通过。
+- 完整diff自查无未解决问题；机械低风险改名未触发独立审查。GUIDE_NO_UPDATE、ARCHITECTURE_NO_UPDATE、README_UPDATED。
+- 边界：macOS/Android真机与Xcode构建未验证；公开APK为CI测试签名，后续安装可能需要处理证书变更。
+
 # 本地演示验证记录
 
 ## v1.1.0 发布打包（契约修订8）
