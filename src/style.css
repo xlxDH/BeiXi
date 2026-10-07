@@ -683,3 +683,12 @@ button svg {
   border-radius: 15px;
   padding: 7px 5px;
 }
+
+.map-host { position: absolute; inset: 0; }
+.provider-control { position: fixed; left: 24px; top: 142px; z-index: 20; display: flex; gap: 8px; background: #fff; border-radius: 12px; padding: 9px 12px; box-shadow: 0 3px 16px #233d4920; font-size: 13px; }
+.provider-control select, .search select { border: 0; background: #fff; color: #33555e; font: inherit; }
+.search input { min-width: 0; }
+.maplibregl-ctrl-attrib { max-width: 65vw; }
+.map-host .maplibregl-ctrl-bottom-right { bottom: 22px; }
+@media (max-width: 800px) { .provider-control { top: 132px; left: 16px; } }
+@media (max-height: 500px) { .provider-control { top: 120px; left: 16px; } }

@@ -1,6 +1,11 @@
 # Dependencies and generated builds
 node_modules/
 /dist/
+/dist-release/
+/release-assets/
+/release-work/
+*.keystore
+*.jks
 .vite/
 *.tsbuildinfo
 

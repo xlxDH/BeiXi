@@ -1,22 +1,37 @@
 {
   "name": "beixi-map",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vue-tsc --noEmit && vite build",
-    "preview": "vite preview --host 127.0.0.1"
+    "preview": "vite preview --host 127.0.0.1",
+    "build:release": "vue-tsc --noEmit && vite build --mode release",
+    "native:sync": "npm run build:release && cap sync"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/filesystem": "^8.1.4",
+    "@capacitor/geolocation": "^8.2.3",
+    "@capacitor/ios": "^8.5.2",
+    "@capacitor/share": "^8.0.3",
     "js-md5": "^0.8.3",
     "lucide-vue-next": "^1.0.0",
+    "maplibre-gl": "^6.13.0",
     "vue": "^3.5.22"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
     "@vitejs/plugin-vue": "^6.0.1",
     "typescript": "~5.9.3",
     "vite": "^7.1.9",
     "vue-tsc": "^3.1.0"
+  },
+  "overrides": {
+    "xcode": {
+      "uuid": "^11.1.1"
+    }
   }
 }

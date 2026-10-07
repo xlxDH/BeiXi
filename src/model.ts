@@ -1,3 +1,4 @@
+import { gcj02ToWgs84, type MapMode } from "./coordinates";
 export interface Member {
   id: number;
   name: string;
@@ -13,6 +14,8 @@ export interface View {
   zoom: number;
 }
 export interface Snapshot {
+  coordinateSystem?: "WGS84";
+  mapMode?: MapMode;
   members: Member[];
   view: View;
   panelOpen: boolean;
@@ -36,7 +39,7 @@ const rows: [string, string, number, number, string][] = [
   ["黑鲨掉落", "福建 · 福州市", 26.0745, 119.2965, "#4f8da1"],
   ["艾伦", "浙江 · 杭州市", 30.2741, 120.1551, "#e58a9a"],
   ["陌瑾", "上海 · 迪士尼主题公园", 31.1443, 121.657, "#d98da5"],
-  ["蘑菇enter", "福建 · 厦门市", 24.4798, 118.0894, "#d39b66"],
+  ["蘑菇enter", "海南 · 三亚市 · 海南热带海洋学院", 18.313372, 109.542620, "#d39b66"],
   ["潮汐", "西安 · 西安电子科技大学长安校区", 34.128, 108.834, "#6f9fc2"],
   ["陆离", "上海 · 交通大学医学院浦东校区", 31.090054, 121.613814, "#9eb66f"],
 ];
@@ -45,13 +48,33 @@ export const defaultMembers: Member[] = rows.map(
     id: i + 1,
     name,
     city,
-    lat,
-    lng,
+    // The updated Sanya reference comes from MapTiler in WGS84; older rows use Tencent coordinates.
+    ...(name === "蘑菇enter" ? { lat, lng } : gcj02ToWgs84(lat, lng)),
     color,
     avatar: photo(i + 1),
   }),
 );
-export const STORAGE_KEY = "beixi-default-v1";
+export const LEGACY_STORAGE_KEY = "beixi-default-v1";
+export const STORAGE_KEY = "beixi-default-v2";
+export function restoreSnapshot(value: unknown, legacy = false): Snapshot | null {
+  if (!validateSnapshot(value)) return null;
+  if (!legacy && value.coordinateSystem !== "WGS84") return null;
+  const snapshot: Snapshot = !legacy ? value : {
+    ...value, coordinateSystem: "WGS84", mapMode: "auto",
+    members: value.members.map((m) => ({ ...m, ...gcj02ToWgs84(m.lat, m.lng) })),
+    view: { ...value.view, ...gcj02ToWgs84(value.view.lat, value.view.lng) },
+  };
+  const oldPosition = gcj02ToWgs84(24.4798, 118.0894);
+  return {
+    ...snapshot,
+    members: snapshot.members.map((member) =>
+      member.id === 10 && member.name === "蘑菇enter" && member.city === "福建 · 厦门市" &&
+      Math.abs(member.lat - oldPosition.lat) < 0.000001 && Math.abs(member.lng - oldPosition.lng) < 0.000001
+        ? { ...member, city: defaultMembers[9]!.city, lat: defaultMembers[9]!.lat, lng: defaultMembers[9]!.lng }
+        : member,
+    ),
+  };
+}
 export function validAvatar(avatar: string): boolean {
   if (/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(avatar))
     return true;
@@ -69,6 +92,8 @@ export function validAvatar(avatar: string): boolean {
 export function validateSnapshot(value: unknown): value is Snapshot {
   if (!value || typeof value !== "object") return false;
   const s = value as Snapshot;
+  if (s.coordinateSystem !== undefined && s.coordinateSystem !== "WGS84") return false;
+  if (s.mapMode !== undefined && !["auto", "tencent", "overseas"].includes(s.mapMode)) return false;
   if (
     !Array.isArray(s.members) ||
     s.members.length > 80 ||

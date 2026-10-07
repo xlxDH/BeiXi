@@ -1,6 +1,28 @@
 # 本地演示验证记录
 
-## 当前版本：高清导出与两岛小窗（契约修订4）
+## v1.1.0 发布打包（契约修订8）
+
+本地build:release、地图/连接线回归、npm audit（0项）通过。发布模式使用独立dist-release并清空所有地图构建凭据。四个本地生成附件逐文件扫描不含.env.local中的凭据；macOS tar内启动脚本和Node显式0755。Windows包内Node实际启动127.0.0.1:41731，移动宽度设置页面保存刷新通过，错误Host返回403。源码候选文件同样完成凭据扫描。
+
+独立审查发现旧暂存文件残留、macOS归档权限和Android分享过早删除缓存，均已修复。Android APK须由GitHub Actions构建后检查；macOS真实系统启动、Android/iOS真机定位分享及Xcode编译未在本机验证。iOS仅未签名工程，非IPA。流水线只上传至草稿Release，附件验证后由发布者公开。
+
+## 当前版本：腾讯大陆 + MapLibre/MapTiler 海外（契约修订7）
+
+2026-10-07，Windows / Edge。本轮真实服务验证使用本地配置的腾讯与 MapTiler 凭据，配置未进入版本库。
+
+| 验收 | 实现与证据 |
+| --- | --- |
+| F1 双地图 | App.vue / maps.ts：自动、手动、快速切换及移动端布局通过；腾讯国内与 MapTiler 都柏林真实底图加载；MapLibre Worker在开发和生产构建中均正常，页面无未捕获错误 |
+| F2 坐标与兼容 | coordinates.ts / model.ts：tests/maps.mjs通过，覆盖国内、港澳台和邻国、沿海城市往返转换、旧快照保留及v2不重复转换；真实浏览器保存刷新正常 |
+| F3 搜索与错误 | services.ts：真实海外搜索Dublin返回“都柏林, 爱尔兰”；配置缺失明确提示并可切回腾讯。夹具模式另验证自托管样式及搜索响应适配 |
+| F4 导出 | export.ts / ExportDialog.vue：真实腾讯主图+MapTiler两岛小窗PNG为2560×1800，2655031字节，双服务署名可读；拖动/重置保持锚点与源数据、取消清理、移动端当前视图导出通过；禁用键盘旋转/倾斜的投影回归通过 |
+| F5 质量 | 最终npm run build、node tests/maps.mjs、node tests/connections.mjs通过。独立审查的沿海覆盖及键盘旋转Major已修复，复审无剩余Critical/Major；README已同步 |
+
+浏览器集成脚本：tests/browser-maps.mjs。真实模式设置MAP_TEST_LIVE=1及TEST_URL；夹具模式使用本地测试样式和受控海外搜索响应，但仍加载实际MapLibre渲染器、实际腾讯底图。两类证据分别验证接入逻辑与真实服务，不相互替代。截图/输出：hybrid-mainland-preview.png、hybrid-overseas-preview.png、hybrid-live-export-preview.png、hybrid-mobile-preview.png，均为忽略的本地验证产物。
+
+地区覆盖采用Natural Earth 1:10m及5公里沿岸容差，边界/离岸区域仍需核对；跨日期变更线合并不支持并给出明确提示。自托管服务器的资源访问、CORS、授权和大陆跨运营商稳定性未实测，设备GPS精度未验证。构建存在MapLibre大于500KB的分块提示，已按需动态加载。
+
+## 历史：高清导出与两岛小窗（契约修订4）
 
 2026-10-07：默认PNG2560×1800，地图在两倍画布加一级缩放重新渲染，头像和文字按两倍分辨率绘制，维持逻辑视野和比例。真实智能导出下载并检查图片尺寸与视觉结果：爱尔兰岛、大不列颠岛完整呈现，小溪头像置于西侧海面，连线指向都柏林。手机390×844当前视图导出2560×1800成功，保留原地理范围与头像布局；取消导出清除离屏地图，无浏览器错误。爱尔兰多成员使用原有有界避让，三位同点成员的照片及标签边界检查通过。最终npm run build通过，独立复查无显著回归。
 

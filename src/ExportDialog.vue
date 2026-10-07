@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, shallowRef, computed, watch, nextTick, onUnmounted } from "vue";
 import { Download, X, Image, LoaderCircle, RotateCcw } from "lucide-vue-next";
+import type { Provider } from "./coordinates";
+import { downloadPng } from "./download";
 import type { Member, View } from "./model";
 import { prepareExport, renderExport, exportBlob, exportHandles, moveExportMember, resetExportLayout, type ExportScene } from "./export";
 import "./export.css";
-const props = defineProps<{ members: Member[]; currentView: View; open: boolean }>();
+const props = defineProps<{ members: Member[]; currentView: View; open: boolean; provider: Provider }>();
 const emit = defineEmits<{ close: [] }>();
 const busy = ref(false), downloading = ref(false), error = ref(""), mode = ref<"smart" | "current">("smart");
 const scene = shallowRef<ExportScene>();
@@ -46,7 +48,7 @@ async function generate() {
   busy.value = true;
   clear();
   try {
-    const result = await prepareExport(props.members, { ...props.currentView }, mode.value, controller.signal);
+    const result = await prepareExport(props.members, { ...props.currentView }, mode.value, controller.signal, props.provider);
     if (token !== generation || !props.open) return;
     scene.value = result;
     await nextTick();
@@ -110,11 +112,7 @@ async function download() {
   try {
     const blob = await exportBlob(canvas.value);
     if (token !== generation || !props.open) return;
-    const url = URL.createObjectURL(blob), a = document.createElement("a");
-    a.href = url;
-    a.download = "被溪-地图.png";
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    await downloadPng(blob);
   } catch (e) {
     if (token === generation) error.value = (e as Error).message;
   } finally {

@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
 import {
   Search,
+  Settings,
   Users,
   X,
   Maximize,
@@ -15,10 +16,16 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-vue-next";
-import { loadMap, searchPlace, wgs84ToGcj02 } from "./services";
+import { searchPlace } from "./services";
+import { devicePosition } from "./location";
+import { createMap, providerName, type MapAdapter } from "./maps";
+import { providerFor, type MapMode, type Provider } from "./coordinates";
 import {
   defaultMembers,
   STORAGE_KEY,
+  LEGACY_STORAGE_KEY,
+  restoreSnapshot,
+  type Snapshot,
   validateSnapshot,
   type Member,
   type View,
@@ -26,13 +33,17 @@ import {
 import { layoutMarkers } from "./layout";
 import { clipOwnLine, crossedMembers, type MemberBounds } from "./connections";
 import ExportDialog from "./ExportDialog.vue";
-let saved: any = null,
+import MapSettings from "./MapSettings.vue";
+const settingsOpen = ref(false);
+let saved: Snapshot | null = null,
   restoreError = "";
 try {
-  const raw = localStorage.getItem(STORAGE_KEY);
+  const currentRaw = localStorage.getItem(STORAGE_KEY);
+  const raw = currentRaw ?? localStorage.getItem(LEGACY_STORAGE_KEY);
   if (raw) {
     const value = JSON.parse(raw);
-    if (validateSnapshot(value)) saved = value;
+    const restored = restoreSnapshot(value, currentRaw === null);
+    if (restored) saved = restored;
     else restoreError = "已保存的数据无效，已载入内置名单。";
   }
 } catch {
@@ -65,6 +76,9 @@ const mapStyle = computed(() => ({
   transformOrigin: "0 0",
 }));
 const view = ref<View>(saved?.view || { lat: 36, lng: 74, zoom: 3 });
+const mapMode = ref<MapMode>(saved?.mapMode || "auto");
+const activeProvider = ref<Provider>(providerFor(view.value.lat, view.value.lng, mapMode.value));
+const searchRegion = ref<Provider>("overseas");
 const anchors = ref<{ id: number; x: number; y: number }[]>([]),
   markerSize = computed(() =>
     viewport.value.height < 500 ? 42 : viewport.value.width <= 800 ? 52 : 62,
@@ -136,13 +150,12 @@ watch(
   },
   { deep: true, flush: "post", immediate: true },
 );
-let map: any,
-  T: any,
+let map: MapAdapter | undefined,
   observer: ResizeObserver,
   navToken = 0;
 function project(lat: number, lng: number) {
-  if (map && T) {
-    const p = map.projectToContainer(new T.LatLng(lat, lng));
+  if (map) {
+    const p = map.project(lat, lng);
     return { x: p.x * scale.value, y: p.y * scale.value };
   }
   const merc = (v: number) =>
@@ -159,8 +172,7 @@ function project(lat: number, lng: number) {
 }
 function redraw() {
   if (map) {
-    const c = map.getCenter();
-    view.value = { lat: c.getLat(), lng: c.getLng(), zoom: map.getZoom() };
+    view.value = map.getView();
   }
   anchors.value = members.value.map((m) => ({
     id: m.id,
@@ -169,10 +181,9 @@ function redraw() {
 }
 function go(lat: number, lng: number, zoom = view.value.zoom) {
   view.value = { lat, lng, zoom };
-  if (map) {
-    map.setCenter(new T.LatLng(lat, lng));
-    map.setZoom(zoom);
-  }
+  const provider = providerFor(lat, lng, mapMode.value);
+  if (!map || map.provider !== provider) { void switchMap(); return; }
+  map.setView(view.value);
   redraw();
 }
 function choose(id: number) {
@@ -194,6 +205,12 @@ function fit() {
     go(36, 105, 3);
     return;
   }
+  if (Math.max(...members.value.map((m) => m.lng)) - Math.min(...members.value.map((m) => m.lng)) > 180) {
+    const first = members.value[0]!;
+    go(first.lat, first.lng, 5);
+    notice.value = "成员跨越国际日期变更线，请通过名单分别定位和导出。";
+    return;
+  }
   const minLng = Math.min(...members.value.map((m) => m.lng)),
     maxLng = Math.max(...members.value.map((m) => m.lng)),
     merc = (v: number) =>
@@ -205,7 +222,7 @@ function fit() {
     usableW = Math.max(160, viewport.value.width - right - 70) / scale.value,
     usableH = Math.max(160, viewport.value.height - 300) / scale.value,
     z = Math.max(
-      map ? 3 : 1,
+      activeProvider.value === "tencent" ? 3 : 1,
       Math.min(
         12,
         Math.log2(
@@ -228,7 +245,7 @@ function zoomBy(n: number) {
   go(
     view.value.lat,
     view.value.lng,
-    Math.max(map ? 3 : 1, Math.min(18, view.value.zoom + n)),
+    Math.max(activeProvider.value === "tencent" ? 3 : 1, Math.min(18, view.value.zoom + n)),
   );
 }
 async function search() {
@@ -236,7 +253,7 @@ async function search() {
   const token = ++navToken;
   searching.value = true;
   try {
-    const p = await searchPlace(query.value.trim());
+    const p = await searchPlace(query.value.trim(), searchRegion.value);
     if (token !== navToken) return;
     go(p.lat, p.lng, 12);
     notice.value = `已找到：${p.title}`;
@@ -246,30 +263,23 @@ async function search() {
     if (token === navToken) searching.value = false;
   }
 }
-function locate() {
+async function locate() {
   const token = ++navToken;
   searching.value = false;
-  if (!navigator.geolocation) {
-    notice.value = "浏览器不支持定位。";
-    return;
+  try {
+    const c = await devicePosition();
+    if (token !== navToken) return;
+    go(c.lat, c.lng, 13);
+    notice.value = "已定位设备，成员参考位置保持不变。";
+  } catch {
+    if (token === navToken) notice.value = "未能获取设备位置，请检查定位权限。";
   }
-  navigator.geolocation.getCurrentPosition(
-    (p) => {
-      if (token !== navToken) return;
-      const c = wgs84ToGcj02(p.coords.latitude, p.coords.longitude);
-      go(c.lat, c.lng, 13);
-      notice.value = "已定位设备，成员参考位置保持不变。";
-    },
-    () => {
-      if (token === navToken)
-        notice.value = "未能获取设备位置，请检查定位权限。";
-    },
-    { timeout: 10000 },
-  );
 }
 function saveDefault() {
   try {
     const snapshot = {
+      coordinateSystem: "WGS84",
+      mapMode: mapMode.value,
       members: members.value,
       view: {
         ...view.value,
@@ -455,45 +465,73 @@ function resize() {
   nextTick(redraw);
 }
 watch(members, redraw, { deep: true });
-onMounted(async () => {
-  window.addEventListener("resize", resize);
-  observer = new ResizeObserver(redraw);
-  observer.observe(mapEl.value!);
-  if (!saved) fit();
+let mapGeneration = 0;
+let mapController: AbortController | undefined;
+let switchTimer: ReturnType<typeof setTimeout> | undefined;
+let mounted = false;
+async function switchMap() {
+  if (!mounted || !mapEl.value) return;
+  clearTimeout(switchTimer);
+  const generation = ++mapGeneration;
+  mapController?.abort();
+  const controller = new AbortController();
+  mapController = controller;
+  map?.destroy();
+  map = undefined;
+  mapReady.value = false;
+  loading.value = true;
+  activeProvider.value = providerFor(view.value.lat, view.value.lng, mapMode.value);
+  // The SDK owns this child; Vue retains ownership of the fallback layer.
+  const host = document.createElement("div");
+  host.className = "map-host";
+  mapEl.value.querySelectorAll(".map-host").forEach((el) => el.remove());
+  mapEl.value.appendChild(host);
+  let candidate: MapAdapter | undefined;
   try {
-    T = await loadMap();
-    map = new T.Map(mapEl.value, {
-      center: new T.LatLng(view.value.lat, view.value.lng),
-      zoom: Math.max(3, view.value.zoom),
-      pitch: 0,
-      rotation: 0,
-      viewMode: "2D",
-    });
-    map.removeControl(T.constants.DEFAULT_CONTROL_ID.ZOOM);
-    map.removeControl(T.constants.DEFAULT_CONTROL_ID.ROTATION);
-    map.on("bounds_changed", redraw);
-    map.on("dragstart", () => {
-      navToken++;
-      searching.value = false;
-    });
+    candidate = await createMap(host, view.value, activeProvider.value, controller.signal);
+    if (generation !== mapGeneration) { candidate.destroy(); host.remove(); return; }
+    map = candidate;
+    map.on("move", redraw);
+    map.on("error", () => { if (generation === mapGeneration) notice.value = "地图资源加载失败，请检查网络、Key 和地图服务配置后重试。"; });
+    map.on("dragstart", () => { navToken++; searching.value = false; });
     map.on("idle", () => {
+      if (generation !== mapGeneration) return;
       redraw();
-      const logo = mapEl.value?.querySelector(".logo-text")?.parentElement;
-      if (logo) {
-        logo.style.transform = `scale(${1 / scale.value})`;
-        logo.style.transformOrigin = "bottom left";
+      const logo = host.querySelector<HTMLElement>(".logo-text")?.parentElement || host.querySelector<HTMLElement>(".maplibregl-ctrl-bottom-right");
+      if (logo) { logo.style.transform = `scale(${1 / scale.value})`; logo.style.transformOrigin = candidate?.provider === "tencent" ? "bottom left" : "bottom right"; }
+      if (providerFor(view.value.lat, view.value.lng, mapMode.value) !== map?.provider) {
+        clearTimeout(switchTimer);
+        switchTimer = setTimeout(() => void switchMap(), 350);
       }
     });
+    await map.ready(controller.signal);
+    if (generation !== mapGeneration) return;
     mapReady.value = true;
-    if (!saved) fit();
+    notice.value = "";
   } catch (e) {
+    if (generation !== mapGeneration) return;
+    candidate?.destroy();
+    map = undefined;
+    host.remove();
     notice.value = (e as Error).message;
   } finally {
-    loading.value = false;
-    redraw();
+    if (generation === mapGeneration) { loading.value = false; redraw(); }
   }
+}
+watch(mapMode, () => void switchMap());
+onMounted(() => {
+  mounted = true;
+  window.addEventListener("resize", resize);
+  observer = new ResizeObserver(() => { map?.resize(); redraw(); });
+  observer.observe(mapEl.value!);
+  if (!saved) fit();
+  else void switchMap();
 });
 onUnmounted(() => {
+  mounted = false;
+  mapGeneration++;
+  clearTimeout(switchTimer);
+  mapController?.abort();
   window.removeEventListener("resize", resize);
   observer?.disconnect();
   map?.destroy();
@@ -581,6 +619,7 @@ onUnmounted(() => {
       <a class="brand" href="#" @click.prevent="fit">被溪</a
       ><span class="demo-badge">本地模拟位置</span>
       <div class="top-actions">
+        <button class="icon-button" title="地图服务设置" aria-label="地图服务设置" @click="settingsOpen = true"><Settings :size="19" /></button>
         <button
           class="icon-button"
           title="保存为默认"
@@ -606,6 +645,7 @@ onUnmounted(() => {
       </div>
     </header>
     <form class="search" @submit.prevent="search">
+      <select v-model="searchRegion" aria-label="搜索区域"><option value="tencent">国内</option><option value="overseas">海外</option></select>
       <Search :size="17" /><input
         v-model="query"
         aria-label="搜索地点"
@@ -671,6 +711,7 @@ onUnmounted(() => {
       </div>
       <p class="panel-foot">设置仅保存在此浏览器</p>
     </aside>
+    <div class="provider-control"><label>地图 <select v-model="mapMode" aria-label="地图服务"><option value="auto">自动切换</option><option value="tencent">腾讯地图</option><option value="overseas">海外地图</option></select></label><button v-if="!mapReady && !loading" @click="switchMap">重试</button></div>
     <div class="map-controls">
       <button
         class="icon-button"
@@ -733,9 +774,9 @@ onUnmounted(() => {
         <X :size="16" />
       </button>
     </div>
-    <div v-if="loading" class="loading-status">正在连接腾讯地图…</div>
+    <div v-if="loading" class="loading-status">正在连接{{ providerName(activeProvider) }}…</div>
     <div class="map-credit">
-      {{ mapReady ? "腾讯地图" : "本地示意图 · 非真实底图" }} · 被溪
+      {{ mapReady ? providerName(activeProvider) : "本地示意图 · 非真实底图" }} · 被溪
     </div>
     <div v-if="editor" class="modal-backdrop" @click.self="editor = false">
       <form class="editor-modal" @submit.prevent="commit">
@@ -761,7 +802,7 @@ onUnmounted(() => {
         /></label>
         <div class="field-pair">
           <label
-            >纬度<input
+            >纬度（WGS84）<input
               v-model="form.lat"
               type="number"
               step="any"
@@ -769,7 +810,7 @@ onUnmounted(() => {
               max="85"
               required /></label
           ><label
-            >经度<input
+            >经度（WGS84）<input
               v-model="form.lng"
               type="number"
               step="any"
@@ -808,10 +849,12 @@ onUnmounted(() => {
         </div>
       </section>
     </div>
+    <MapSettings v-if="settingsOpen" @close="settingsOpen = false" />
     <ExportDialog
       :open="exportOpen"
       :members="members"
       :current-view="view"
+      :provider="activeProvider"
       @close="exportOpen = false"
     />
   </main>

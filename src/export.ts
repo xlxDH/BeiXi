@@ -1,4 +1,5 @@
-import { loadMap } from "./services";
+import { createMap, type MapAdapter } from "./maps";
+import { providerFor, type Provider } from "./coordinates";
 import type { Member, View } from "./model";
 import { clipOwnLine, crossedMembers } from "./connections";
 
@@ -68,6 +69,7 @@ export function groupRegions(members: Member[]) {
       for (const candidate of members)
         if (
           remaining.has(candidate.id) &&
+          providerFor(candidate.lat, candidate.lng) === providerFor(m.lat, m.lng) &&
           distanceKm(group[i]!, candidate) < 2500
         ) {
           group.push(candidate);
@@ -114,6 +116,8 @@ function merc(lat: number) {
   );
 }
 export function fitView(group: Member[], width: number, height: number) {
+  if (Math.max(...group.map((m) => m.lng)) - Math.min(...group.map((m) => m.lng)) > 180)
+    throw new Error("此区域跨越国际日期变更线，暂不支持智能合并；请定位单侧成员并使用当前视图导出。");
   const lngs = group.map((m) => m.lng),
     ys = group.map((m) => merc(m.lat));
   const x1 = Math.min(...lngs),
@@ -318,7 +322,7 @@ function drawMembers(
   return positions;
 }
 async function capture(
-  T: any,
+  provider: Provider,
   group: Member[],
   width: number,
   height: number,
@@ -328,6 +332,7 @@ async function capture(
   islands = false,
 ) {
   signal?.throwIfAborted();
+  const initial = view || fitView(group, width, height);
   const container = document.createElement("div");
   Object.assign(container.style, {
     position: "fixed",
@@ -338,46 +343,10 @@ async function capture(
     pointerEvents: "none",
   });
   document.body.appendChild(container);
-  const initial = view || fitView(group, width, height);
-  let map: any;
+  let map: MapAdapter | undefined;
   try {
-    map = new T.Map(container, {
-      center: new T.LatLng(initial.lat, initial.lng),
-      zoom: initial.zoom + Math.log2(EXPORT_SCALE),
-      maxZoom: 21,
-      viewMode: "2D",
-      pitch: 0,
-      rotation: 0,
-      renderOptions: { preserveDrawingBuffer: true },
-    });
-    const controls = T.constants.DEFAULT_CONTROL_ID;
-    map.removeControl(controls.ZOOM);
-    map.removeControl(controls.ROTATION);
-    await new Promise<void>((resolve, reject) => {
-      let finished = false;
-      let idleTimer: ReturnType<typeof setTimeout>;
-      const timeout = setTimeout(finish, 6500);
-      const abort = () => {
-        if (finished) return;
-        finished = true;
-        clearTimeout(timeout);
-        clearTimeout(idleTimer);
-        reject(new DOMException("导出已取消", "AbortError"));
-      };
-      signal?.addEventListener("abort", abort, { once: true });
-      function finish() {
-        if (finished) return;
-        finished = true;
-        clearTimeout(timeout);
-        clearTimeout(idleTimer);
-        signal?.removeEventListener("abort", abort);
-        resolve();
-      }
-      map.on("idle", () => {
-        clearTimeout(idleTimer);
-        idleTimer = setTimeout(finish, 1800);
-      });
-    });
+    map = await createMap(container, { ...initial, zoom: initial.zoom + Math.log2(EXPORT_SCALE) }, provider, signal);
+    await map.ready(signal);
     signal?.throwIfAborted();
     const result = document.createElement("canvas");
     result.width = width * EXPORT_SCALE;
@@ -403,7 +372,7 @@ async function capture(
     if (nonblank < 30)
       throw new Error("地图画布为空，无法导出真实地图，请检查地图服务后重试。");
     const project = (m: Member) => {
-      const p = map.projectToContainer(new T.LatLng(m.lat, m.lng));
+      const p = map!.project(m.lat, m.lng);
       return { x: p.x / EXPORT_SCALE, y: p.y / EXPORT_SCALE };
     };
     const visible = view
@@ -432,15 +401,12 @@ async function capture(
           ay: project(m).y,
         }));
     signal?.throwIfAborted();
-    const credit = (
-      container.querySelector(".logo-text")?.textContent ||
-      "腾讯地图 · 审图号见地图服务"
-    ).trim();
+    const credit = map.credit();
     return { canvas: result, positions, credit };
   } catch (e) {
     if (e instanceof DOMException && e.name === "SecurityError")
       throw new Error(
-        "地图或头像跨域限制阻止了 PNG 导出，请使用本地头像并检查腾讯地图配置。",
+        "地图或头像跨域限制阻止了 PNG 导出，请使用本地头像并检查地图服务的跨域配置。",
       );
     throw e;
   } finally {
@@ -453,12 +419,12 @@ export async function prepareExport(
   currentView: View,
   mode: "smart" | "current" = "smart",
   signal?: AbortSignal,
+  currentProvider?: Provider,
 ): Promise<ExportScene> {
   signal?.throwIfAborted();
   if (!members.length) throw new Error("请先添加成员，再导出地图。");
   // Keep all editable positions detached from live member data.
   members = members.map((m) => ({ ...m }));
-  const T = await loadMap();
   const width = 1280,
     height = 900;
   const groups = mode === "smart" ? groupRegions(members) : [members];
@@ -495,7 +461,7 @@ export async function prepareExport(
       ? document.querySelector<HTMLElement>(".photo-marker")?.offsetWidth || 58
       : 64;
   const main = await capture(
-    T,
+    mode === "current" ? currentProvider || providerFor(currentView.lat, currentView.lng) : providerFor(primary[0]!.lat, primary[0]!.lng),
     primary,
     mode === "current" ? sourceWidth : width,
     mode === "current" ? sourceHeight : height,
@@ -536,7 +502,9 @@ export async function prepareExport(
     main.canvas = output;
   }
   const layers: ExportLayer[] = [];
+  const credits = new Set<string>();
   async function addLayer(captured: typeof main, rect: Rect, size: number, frame?: Rect, title?: string) {
+    credits.add(captured.credit);
     const photos = await Promise.all(captured.positions.map((p) => image(p.avatar)));
     signal?.throwIfAborted();
     layers.push({ ...rect, background: captured.canvas, positions: captured.positions,
@@ -559,7 +527,7 @@ export async function prepareExport(
     ]);
     const rect = chooseInset(subjects, width, height, i - 1);
     const inset = await capture(
-      T,
+      providerFor(region[0]!.lat, region[0]!.lng),
       region,
       rect.width - 16,
       rect.height - 54,
@@ -572,7 +540,7 @@ export async function prepareExport(
     await addLayer(inset, { x: rect.x + 8, y: rect.y + 38, width: rect.width - 16, height: rect.height - 54 }, 48, rect, title);
   }
   signal?.throwIfAborted();
-  return { width, height, layers, credit: main.credit };
+  return { width, height, layers, credit: [...credits].join(" · ") };
 }
 
 export interface ExportLayer extends Rect {
@@ -671,7 +639,7 @@ export function renderExport(scene: ExportScene, canvas: HTMLCanvasElement) {
   ctx.fillStyle = "#536f76";
   ctx.font = "12px sans-serif";
   ctx.textAlign = "left";
-  ctx.fillText(`腾讯地图  |  ${scene.credit}`, 16, height - 14, width - 210);
+  ctx.fillText(scene.credit, 16, height - 14, width - 210);
   ctx.textAlign = "right";
   ctx.fillText("被溪 · 本地位置示意", width - 16, height - 14);
 }
