@@ -4,7 +4,7 @@ CONTRACT_REF: TASK.md
 CONTRACT_REVISION: 8
 APPROVED_REVISION: 8
 APPROVAL: confirmed
-STATUS: ACTIVE
+STATUS: IDLE
 ARCHITECTURE_REF: README.md
 
 修订6（历史）：导出预览支持鼠标/触屏拖动头像或姓名，仅改变导出排版，成员经纬度和地理锚点不变。范围：导出渲染、弹窗、样式、针对性验证及说明。E1拖动与连线正确且不改坐标；E2智能主图/小窗、当前视图均支持，下载2560×1800与调整后的预览一致；E3重置/重新生成/关闭清除调整，错误和取消可用。假设：调整仅限本次预览，头像约束在所属区域内。不改存储结构、依赖或供应商。风险：预览缩放换算、小窗裁剪、异步取消；以几何回归、构建和浏览器操作验证。
@@ -28,3 +28,5 @@ ARCHITECTURE_REF: README.md
 修订7交付：F1至F5已完成，证据见VERIFICATION.md。真实腾讯及MapTiler、海外搜索、混合PNG、坐标迁移、取消、移动端和生产构建验证通过；独立复审无剩余Critical/Major。README与架构说明同步，无新增流程规则。保留边界近似及自托管资源未实测说明；凭据只保存在被忽略的.env.local。任务完成后恢复IDLE，无发布/部署。
 
 修订8：用户已授权提交、推送、tag及Release；桌面解压双击启动浏览器；iOS交付未签名工程。R1干净发布构建及运行时Key设置，R2含Node运行时的Win10/11 x64、macOS Intel/ARM包，R3 Capacitor Android测试签名APK及未签名iOS工程、原生PNG分享，R4 README/变更说明/校验及独立审查。禁止带入本机凭据，不代购证书、不注册开机启动。
+
+修订8完成：main提交25ae110、tag v1.1.0及Release已发布；GitHub Actions 37579682688成功，六个附件SHA256及全归档凭据扫描通过，Android APK v2签名验证通过。Windows启动/设置已实测；macOS权限静态验证，移动端真机和Xcode未验证。独立复审无剩余Critical/Major。README/架构说明更新，任务恢复IDLE。

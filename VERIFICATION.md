@@ -4,7 +4,7 @@
 
 本地build:release、地图/连接线回归、npm audit（0项）通过。发布模式使用独立dist-release并清空所有地图构建凭据。四个本地生成附件逐文件扫描不含.env.local中的凭据；macOS tar内启动脚本和Node显式0755。Windows包内Node实际启动127.0.0.1:41731，移动宽度设置页面保存刷新通过，错误Host返回403。源码候选文件同样完成凭据扫描。
 
-独立审查发现旧暂存文件残留、macOS归档权限和Android分享过早删除缓存，均已修复。Android APK须由GitHub Actions构建后检查；macOS真实系统启动、Android/iOS真机定位分享及Xcode编译未在本机验证。iOS仅未签名工程，非IPA。流水线只上传至草稿Release，附件验证后由发布者公开。
+独立审查发现旧暂存文件残留、macOS归档权限和Android分享过早删除缓存，均已修复。GitHub Actions运行37579682688成功，Android APK通过apksig验证（v2签名）；线上六个附件逐个SHA256匹配且全归档凭据扫描通过。Release v1.1.0已公开。macOS真实系统启动、Android/iOS真机定位分享及Xcode编译未在本机验证。iOS仅未签名工程，非IPA。流水线只上传至草稿Release，附件验证后由发布者公开。
 
 ## 当前版本：腾讯大陆 + MapLibre/MapTiler 海外（契约修订7）
 
