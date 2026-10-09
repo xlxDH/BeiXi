@@ -34,6 +34,7 @@ for target, archive_ext in [('win-x64', 'zip'), ('darwin-x64', 'tar.gz'), ('darw
     shutil.copytree(ROOT / 'dist-release', folder / 'site')
     shutil.copy2(ROOT / 'scripts/launcher.cjs', folder)
     shutil.copy2(ROOT / 'README.md', folder)
+    shutil.copy2(ROOT / 'LICENSE', folder)
     suffix = 'cmd' if target.startswith('win') else 'command'
     script = folder / f'Start-BeiXi.{suffix}'
     shutil.copy2(ROOT / 'scripts' / script.name, script)
@@ -80,6 +81,7 @@ shutil.copytree(ROOT / 'ios', ios_folder / 'ios', dirs_exist_ok=True, ignore=shu
 for module in ['ios', 'core', 'filesystem', 'share', 'geolocation']:
     shutil.copytree(ROOT / 'node_modules/@capacitor' / module, ios_folder / 'node_modules/@capacitor' / module, dirs_exist_ok=True)
 shutil.copy2(ROOT / 'README.md', ios_folder)
+shutil.copy2(ROOT / 'LICENSE', ios_folder)
 (ios_folder / 'UNSIGNED-NOT-INSTALLABLE.txt').write_text('This is an unsigned Xcode project, NOT an IPA. Open ios/App/App.xcodeproj on macOS with Xcode 26+, select your Apple Development Team, then build/sign. Simulator builds do not require distribution signing. See README for limitations.\n', encoding='utf-8')
 shutil.make_archive(str(OUT / ios_name), 'zip', STAGING, ios_name)
 print('Packaged', ios_name)
